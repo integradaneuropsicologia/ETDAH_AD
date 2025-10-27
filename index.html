@@ -110,21 +110,65 @@ const SHEETDB_BASE = "https://sheetdb.io/api/v1/8pmdh33s9fvy8";
 const SHEETS = { PATIENTS:"Patients", TOKENS:"LinkTokens", SCORES:"Scores_ETDAH_AD" };
 const CODE = "ADULT69";
 const PORTAL_URL = "https://integradaneuropsicologia.github.io/formularios/";
-const RELEASE_KEYS = ["ETDAH_AD"]; // nome da(s) coluna(s) de liberação no Patients
+const RELEASE_KEYS = ["ETDAH_AD"]; // colunas de liberação no Patients
 
 /* ===== HELPERS ===== */
 const $ = s => document.querySelector(s);
 const onlyDigits = s => (s||"").replace(/\D+/g,"");
 const qs = k => new URLSearchParams(location.search).get(k) || "";
-const TOKEN = qs("token"); // <-- estava faltando antes
-function setBox(id, text, kind="ok"){ const el=$(id); if(!el) return; el.textContent = text; el.className = "msg " + (kind==="ok"?"okbox":kind==="warn"?"warnbox":"errbox"); el.style.display = "block"; }
-function hideBox(id){ const el=$(id); if(el){ el.style.display="none"; el.textContent=""; } }
-function maskCPF(cpf){ const d = onlyDigits(cpf||""); if(d.length!==11) return cpf||""; return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`; }
-function fmtDateISO(iso){ if(!iso) return ""; const [y,m,d] = String(iso).split("-"); if(!y||!m||!d) return iso; return `${d}/${m}/${y}`; }
-async function GET(url){ const r=await fetch(url); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
-async function sheetSearch(sheet, params){ const usp = new URLSearchParams(params); return GET(`${SHEETDB_BASE}/search?sheet=${encodeURIComponent(sheet)}&${usp.toString()}`); }
-async function sheetCreate(sheet, row){ const r = await fetch(`${SHEETDB_BASE}?sheet=${encodeURIComponent(sheet)}`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ data:[row] }) }); if(!r.ok) throw new Error(await r.text()); return r.json(); }
-async function sheetPatchBy(sheet, column, value, data){ const r = await fetch(`${SHEETDB_BASE}/${encodeURIComponent(column)}/${encodeURIComponent(value)}?sheet=${encodeURIComponent(sheet)}`, { method:"PATCH", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ data }) }); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+const TOKEN = qs("token");
+
+function setBox(id, text, kind="ok"){
+  const el=$(id); if(!el) return;
+  el.textContent = text;
+  el.className = "msg " + (kind==="ok"?"okbox":kind==="warn"?"warnbox":"errbox");
+  el.style.display = "block";
+}
+function hideBox(id){
+  const el=$(id);
+  if(el){ el.style.display="none"; el.textContent=""; }
+}
+function maskCPF(cpf){
+  const d = onlyDigits(cpf||"");
+  if(d.length!==11) return cpf||"";
+  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+}
+function fmtDateISO(iso){
+  if(!iso) return "";
+  const [y,m,d] = String(iso).split("-");
+  if(!y||!m||!d) return iso;
+  return `${d}/${m}/${y}`;
+}
+async function GET(url){
+  const r=await fetch(url);
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+async function sheetSearch(sheet, params){
+  const usp = new URLSearchParams(params);
+  return GET(`${SHEETDB_BASE}/search?sheet=${encodeURIComponent(sheet)}&${usp.toString()}`);
+}
+async function sheetCreate(sheet, row){
+  const r = await fetch(`${SHEETDB_BASE}?sheet=${encodeURIComponent(sheet)}`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ data:[row] })
+  });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sheetPatchBy(sheet, column, value, data){
+  const r = await fetch(
+    `${SHEETDB_BASE}/${encodeURIComponent(column)}/${encodeURIComponent(value)}?sheet=${encodeURIComponent(sheet)}`,
+    {
+      method:"PATCH",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ data })
+    }
+  );
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
 function goPortalWithToken(){
   try{
     const u = new URL(PORTAL_URL, location.href);
@@ -209,23 +253,46 @@ const ITEMS = [
 "Tem dificuldade para processar as informações recebidas."
 ];
 
-/* ===== GRUPOS ===== */
+const TOTAL_ITEMS = ITEMS.length;
+
+/* ===== ESCALA (0..5) ===== */
+const CHOICES = [
+  {v:0, l:'Nunca'},
+  {v:1, l:'Muito raramente'},
+  {v:2, l:'Raramente'},
+  {v:3, l:'Geralmente'},
+  {v:4, l:'Frequentemente'},
+  {v:5, l:'Muito frequentemente'},
+];
+
+/* ===== SUBESCALAS ===== */
 const DESAT = [6,19,20,22,23,24,28,30,32,33,34,36,37,44,49,50,51,54,56,57,64,67,69];
 const IMPULS = [9,11,12,15,18,25,26,38,39,40,41,45,46,47,48,52,53,60,61,62,63,66,68];
 const EMO = [4,7,21,55];
-const AUTORREG_INV = [1,5,8,10,14,16,27,29,42,58,59,65]; // invertidos 0..5 -> 5..0
+const AUTORREG_INV = [1,5,8,10,14,16,27,29,42,58,59,65]; // invertidos
 const HIPER = [2,3,13,17,31,35,43];
+
+/* inversão 0↔5, 1↔4, 2↔3 */
+const inv6 = v => (5 - v);
+
+/* ===== ESTADO GLOBAL ===== */
+let patient=null, tokenRow=null, CPF="";
+const STORAGE_KEY = `ETDAH_AD_${TOKEN||'anon'}`;
+let startAt = Date.now();
 
 /* ===== RENDER ===== */
 function renderQuestions(){
   const host = $("#qs"); host.innerHTML = "";
-  const s = document.createElement('div');
-  s.className='section';
-  s.textContent='Responda a todos os 69 itens (0…5).';
-  host.appendChild(s);
+
+  const sec = document.createElement('div');
+  sec.className='section';
+  sec.textContent='Responda a todos os 69 itens (0…5).';
+  host.appendChild(sec);
 
   ITEMS.forEach((text, idx)=>{
-    const q = idx+1, qn = String(q).padStart(2,"0");
+    const q = idx+1;
+    const qn = String(q).padStart(2,"0");
+
     const row = document.createElement('div');
     row.className = 'item';
     row.setAttribute('data-q', String(q));
@@ -238,41 +305,41 @@ function renderQuestions(){
     const scale = document.createElement('div');
     scale.className = 'scale';
 
-    const CHOICES = [
-      {v:0, l:'Nunca'},
-      {v:1, l:'Muito raramente'},
-      {v:2, l:'Raramente'},
-      {v:3, l:'Geralmente'},
-      {v:4, l:'Frequentemente'},
-      {v:5, l:'Muito frequentemente'},
-    ];
-
     CHOICES.forEach(c=>{
-      const lab = document.createElement('label'); lab.className = 'opt'; lab.setAttribute('title', `${c.l} (${c.v})`);
+      const lab = document.createElement('label');
+      lab.className = 'opt';
+      lab.setAttribute('title', `${c.l} (${c.v})`);
       const id = `q${qn}_${c.v}`;
-      lab.innerHTML = `<input type="radio" name="q${qn}" id="${id}" value="${c.v}" required aria-labelledby="s${qn}"><span>${c.l}</span><small></small>`;
+      lab.innerHTML = `
+        <input type="radio" name="q${qn}" id="${id}" value="${c.v}" required aria-labelledby="s${qn}">
+        <span>${c.l}</span><small></small>`;
       scale.appendChild(lab);
     });
 
     row.append(stem, scale);
     host.appendChild(row);
   });
-}
 
-/* ===== ESTADO ===== */
-let patient=null, tokenRow=null, CPF="";
-const STORAGE_KEY = `ETDAH_AD_${TOKEN||'anon'}`;
+  // progresso inicial
+  $("#progressText").textContent = `Progresso: 0/${TOTAL_ITEMS}`;
+}
 
 /* ===== BOOT ===== */
 (async function boot(){
   try{
-    if(!TOKEN){ setBox("#alert","Link inválido (sem token). Solicite um novo link.","err"); return; }
+    if(!TOKEN){
+      setBox("#alert","Link inválido (sem token). Solicite um novo link.","err");
+      return;
+    }
 
     const trows = await sheetSearch(SHEETS.TOKENS, { token: TOKEN });
     if(!trows || !trows.length) throw new Error("Token inválido ou expirado.");
     tokenRow = trows[0];
-    if(String(tokenRow.disabled||"não").toLowerCase()==="sim") throw new Error("Token desativado. Peça um novo link.");
-    if(tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) throw new Error("Token expirado. Peça um novo link.");
+    if(String(tokenRow.disabled||"não").toLowerCase()==="sim")
+      throw new Error("Token desativado. Peça um novo link.");
+    if(tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date())
+      throw new Error("Token expirado. Peça um novo link.");
+
     CPF = onlyDigits(tokenRow.cpf||"");
     if(!CPF) throw new Error("Token sem CPF vinculado.");
 
@@ -280,16 +347,24 @@ const STORAGE_KEY = `ETDAH_AD_${TOKEN||'anon'}`;
     if(!prows || !prows.length) throw new Error("Paciente não encontrado.");
     patient = prows[0];
 
-    const isAllowed = RELEASE_KEYS.some(k => String(patient[k]||"").trim().toLowerCase()==="sim");
-    if(!isAllowed){ setBox("#alert","Este formulário não está liberado para você.","err"); return; }
+    const isAllowed = RELEASE_KEYS.some(
+      k => String(patient[k]||"").trim().toLowerCase()==="sim"
+    );
+    if(!isAllowed){
+      setBox("#alert","Este formulário não está liberado para você.","err");
+      return;
+    }
 
     // Já respondeu?
     const doneKeys = RELEASE_KEYS.map(k => `${k}_FEITO`);
-    const anyDoneFlag = doneKeys.some(k => String(patient[k]||"").trim().toLowerCase()==="sim");
+    const anyDoneFlag = doneKeys.some(
+      k => String(patient[k]||"").trim().toLowerCase()==="sim"
+    );
     const already = await sheetSearch(SHEETS.SCORES, { cpf: CPF, code: CODE });
     if(anyDoneFlag || (already && already.length)){
       setBox("#alert","Você já respondeu este formulário. Voltando ao portal…","ok");
-      setTimeout(goPortalWithToken, 1200); return;
+      setTimeout(goPortalWithToken, 1200);
+      return;
     }
 
     // Render
@@ -303,6 +378,8 @@ const STORAGE_KEY = `ETDAH_AD_${TOKEN||'anon'}`;
     $("#progressWrap").style.display = "block";
     hideBox("#alert");
 
+    startAt = Date.now();
+
   }catch(err){
     console.error(err);
     setBox("#alert", err.message || "Falha ao abrir o formulário. Tente novamente mais tarde.", "err");
@@ -313,10 +390,7 @@ function renderPatientInfo(){
   const g = $("#pacInfo"); g.innerHTML="";
   const info = [
     ["Nome", patient.nome || "-"],
-    ["CPF", maskCPF(patient.cpf)],
-    ["Nascimento", fmtDateISO(patient.data_nascimento)],
-    ["E-mail", patient.email || "-"],
-    ["WhatsApp", patient.whatsapp || "-"]
+    ["CPF", maskCPF(patient.cpf)]
   ];
   for(const [k,v] of info){
     const div = document.createElement("div");
@@ -329,12 +403,16 @@ function renderPatientInfo(){
 /* ===== RASCUNHO LOCAL ===== */
 function saveDraft(){
   const data = {};
-  for(let i=1;i<=ITEMS.length;i++){
+  for(let i=1;i<=TOTAL_ITEMS;i++){
     const qn = String(i).padStart(2,"0");
     const sel = document.querySelector(`input[name="q${qn}"]:checked`);
     if(sel) data[`q${qn}`] = Number(sel.value);
   }
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){ console.warn("Sem espaço para salvar rascunho"); }
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }catch(e){
+    console.warn("Sem espaço para salvar rascunho");
+  }
 }
 function restoreDraft(){
   try{
@@ -343,52 +421,93 @@ function restoreDraft(){
     const data = JSON.parse(raw);
     for(const [k,v] of Object.entries(data||{})){
       const el = document.querySelector(`input[name="${k}"][value="${v}"]`);
-      if(el){ el.checked = true; }
+      if(el){
+        el.checked = true;
+      }
     }
-  }catch(e){ /* ignore */ }
+  }catch(_){}
 }
-function clearDraft(){ try{ localStorage.removeItem(STORAGE_KEY); }catch(e){} }
+function clearDraft(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(_){}
+}
 
-function countAnswered(){ let c=0; for(let i=1;i<=ITEMS.length;i++){ const qn=String(i).padStart(2,'0'); if(document.querySelector(`input[name="q${qn}"]:checked`)) c++; } return c; }
-function updateProgress(){ const answered = countAnswered(); const total = ITEMS.length; $("#progressText").textContent = `Progresso: ${answered}/${total}`; $("#bar").style.width = `${(answered/total)*100}%`; }
+function countAnswered(){
+  let c=0;
+  for(let i=1;i<=TOTAL_ITEMS;i++){
+    const qn=String(i).padStart(2,'0');
+    if(document.querySelector(`input[name="q${qn}"]:checked`)) c++;
+  }
+  return c;
+}
+function updateProgress(){
+  const answered = countAnswered();
+  $("#progressText").textContent = `Progresso: ${answered}/${TOTAL_ITEMS}`;
+  $("#bar").style.width = `${(answered/TOTAL_ITEMS)*100}%`;
+}
 
 /* ===== EVENTOS DE UI ===== */
-addEventListener('change', (e)=>{ if(e.target && e.target.matches('input[type="radio"][name^="q"]')){ saveDraft(); updateProgress(); } });
-$("#btnSave").addEventListener('click', ()=>{ saveDraft(); setBox('#msg','Rascunho salvo neste dispositivo.','ok'); });
-$("#clearDraft").addEventListener('click', ()=>{ clearDraft(); setBox('#msg','Rascunho apagado.','warn'); });
+addEventListener('change', (e)=>{
+  if(e.target && e.target.matches('input[type="radio"][name^="q"]')){
+    saveDraft();
+    updateProgress();
+  }
+});
+$("#btnSave").addEventListener('click', ()=>{
+  saveDraft();
+  setBox('#msg','Rascunho salvo neste dispositivo.','ok');
+});
+$("#clearDraft").addEventListener('click', ()=>{
+  clearDraft();
+  setBox('#msg','Rascunho apagado.','warn');
+});
 
-/* ===== CÁLCULOS ===== */
-const inv6 = v => 5 - v; // inversão 0↔5, 1↔4, 2↔3
-function sumSet(indices, transform){
-  let s = 0;
-  for(const i of indices){
-    const qn = String(i).padStart(2,'0');
-    const sel = document.querySelector(`input[name="q${qn}"]:checked`);
-    const val = sel ? Number(sel.value) : 0;
-    s += transform ? transform(val) : val;
+/* ===== CÁLCULOS / SCORING ===== */
+function computeScores(answersMap){
+  // somas brutas
+  const sumFrom = (arr, invert=false)=>{
+    let s=0;
+    for(const idx of arr){
+      const qn = `q${String(idx).padStart(2,"0")}`;
+      let v = answersMap[qn] ?? 0;
+      if(invert) v = inv6(v);
+      s += v;
+    }
+    return s;
+  };
+
+  const desat  = sumFrom(DESAT,false);
+  const impuls = sumFrom(IMPULS,false);
+  const emo    = sumFrom(EMO,false);
+  const autor  = sumFrom(AUTORREG_INV,true);  // invertidos
+  const hiper  = sumFrom(HIPER,false);
+
+  // total geral bruto (1..69)
+  let total = 0;
+  for(let i=1;i<=TOTAL_ITEMS;i++){
+    total += answersMap[`q${String(i).padStart(2,"0")}`] ?? 0;
   }
-  return s;
-}
-function sumRange(from,to){
-  let s=0;
-  for(let i=from;i<=to;i++){
-    const qn = String(i).padStart(2,'0');
-    const sel = document.querySelector(`input[name="q${qn}"]:checked`);
-    s += sel ? Number(sel.value) : 0;
-  }
-  return s;
+
+  return { desat, impuls, emo, autor, hiper, total };
 }
 
 /* ===== SUBMIT ===== */
 let sending=false;
 $("#form").addEventListener("submit", async (e)=>{
-  e.preventDefault(); if(sending) return; sending = true; hideBox("#msg");
-  const btn = $("#btnSubmit"); const originalText = btn.textContent; btn.disabled = true; btn.textContent = "Enviando…";
+  e.preventDefault();
+  if(sending) return;
+  sending = true;
+  hideBox("#msg");
+
+  const btn = $("#btnSubmit");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Enviando…";
+
   try{
     if(!patient) throw new Error("Sessão inválida. Recarregue o link.");
 
-    // Validação: todas respondidas
-    for(let i=1;i<=ITEMS.length;i++){
+    // 1. validação: todas respondidas
+    for(let i=1;i<=TOTAL_ITEMS;i++){
       const qn = String(i).padStart(2,'0');
       const sel = document.querySelector(`input[name="q${qn}"]:checked`);
       if(!sel){
@@ -398,15 +517,38 @@ $("#form").addEventListener("submit", async (e)=>{
       }
     }
 
-    // Subescalas
-    const desat  = sumSet(DESAT);
-    const impuls = sumSet(IMPULS);
-    const emo    = sumSet(EMO);
-    const autor  = sumSet(AUTORREG_INV, inv6);
-    const hiper  = sumSet(HIPER);
+    // 2. Anti-duplicidade
+    const again = await sheetSearch(SHEETS.SCORES, { cpf: CPF, code: CODE });
+    if(again && again.length){
+      setBox("#msg","Este formulário já foi enviado anteriormente. Voltando ao portal…","ok");
+      setTimeout(goPortalWithToken,1000);
+      return;
+    }
 
-    // Total geral (1..69) — se você quiser usar
-    const total  = sumRange(1,69);
+    // 3. Coleta respostas + qaList bonitinho
+    const answersMap = {}; // { q01: 3, q02: 0, ... }
+    const qaList = [];     // [{n, q, label, value}]
+
+    for(let i=1;i<=TOTAL_ITEMS;i++){
+      const qn = String(i).padStart(2,"0");
+      const sel = document.querySelector(`input[name="q${qn}"]:checked`);
+      const val = Number(sel.value);
+
+      // achar rótulo ("Raramente"...)
+      const choiceInfo = CHOICES.find(c => c.v === val) || {l:"",v:val};
+
+      answersMap[`q${qn}`] = val;
+      qaList.push({
+        n: i,
+        q: ITEMS[i-1] || "",
+        label: choiceInfo.l,
+        value: val
+      });
+    }
+
+    // 4. Subescalas e total
+    const scores = computeScores(answersMap);
+    const { desat, impuls, emo, autor, hiper, total } = scores;
 
     const categoria_csv = [
       `Desatencao=${desat}`,
@@ -416,6 +558,10 @@ $("#form").addEventListener("submit", async (e)=>{
       `Hiperatividade=${hiper}`
     ].join(',');
 
+    // duração
+    const durationSec = Math.round((Date.now()-startAt)/1000);
+
+    // 5. Salva no Sheets
     await sheetCreate(SHEETS.SCORES, {
       result_id: `${patient.cpf}_${CODE}_${Date.now()}`,
       token: TOKEN,
@@ -425,15 +571,22 @@ $("#form").addEventListener("submit", async (e)=>{
       submitted_at: new Date().toISOString(),
       total: total,
       categoria: categoria_csv,
-      metrics: ""
+      metrics: "",
+      questions: JSON.stringify(qaList)
+      
     });
 
-    // Marca como feito no Patients
+    // 6. Marca como feito no Patients
     const doneUpdates = {};
-    RELEASE_KEYS.map(k=>`${k}_FEITO`).forEach(k=>{ if(k in patient) doneUpdates[k] = "sim"; });
-    if(Object.keys(doneUpdates).length===0) doneUpdates[`${RELEASE_KEYS[0]}_FEITO`] = "sim";
+    RELEASE_KEYS.map(k=>`${k}_FEITO`).forEach(k=>{
+      if(k in patient) doneUpdates[k] = "sim";
+    });
+    if(Object.keys(doneUpdates).length===0){
+      doneUpdates[`${RELEASE_KEYS[0]}_FEITO`] = "sim";
+    }
     await sheetPatchBy(SHEETS.PATIENTS, "cpf", patient.cpf, doneUpdates);
 
+    // 7. limpa e volta
     clearDraft();
     setBox("#msg","Formulário enviado. Voltando ao portal…","ok");
     setTimeout(goPortalWithToken, 1100);
@@ -441,10 +594,11 @@ $("#form").addEventListener("submit", async (e)=>{
   }catch(err){
     console.error(err);
     setBox("#msg", err.message || "Falha ao enviar. Tente novamente.", "err");
-    sending = false; btn.disabled = false; btn.textContent = originalText;
+    sending = false;
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 });
 </script>
 </body>
 </html>
-
