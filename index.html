@@ -6,72 +6,265 @@
 <title>ETDAH-AD</title>
 <style>
   :root{
-    --bg:#0e1625; --card:#14213b; --line:#2b3f66;
-    --text:#f8fafc; --muted:#cbd5e1;
-    --pri:#6d28d9; --ok:#10b981; --err:#ef4444; --warn:#f59e0b;
-    --chip:#0b1220; --chipHover:#0f1a2e; --chipSel:#1e293b;
+    /* TEMA CLARO (PADRÃO) */
+    --bg:#f3f4f6;
+    --card:#ffffff;
+    --line:#e5e7eb;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --pri:#6d28d9;
+    --ok:#10b981;
+    --err:#b91c1c;
+    --warn:#f59e0b;
+    --surface:#f9fafb;
+    --chip:#eef2ff;
+    --chipHover:#e0e7ff;
+    --chipSel:#e0e7ff;
+    --ok-bg:#ecfdf3;
+    --ok-border:#bbf7d0;
+    --ok-text:#166534;
+    --err-bg:#fef2f2;
+    --err-border:#fecaca;
+    --err-text:#7f1d1d;
+    --warn-bg:#fffbeb;
+    --warn-border:#fef3c7;
+    --warn-text:#92400e;
   }
+
+  /* TEMA ESCURO */
+  [data-theme="dark"]{
+    --bg:#0e1625;
+    --card:#14213b;
+    --line:#2b3f66;
+    --text:#f8fafc;
+    --muted:#cbd5e1;
+    --pri:#6d28d9;
+    --ok:#10b981;
+    --err:#ef4444;
+    --warn:#f59e0b;
+    --surface:#0b1220;
+    --chip:#0b1220;
+    --chipHover:#0f1a2e;
+    --chipSel:#1e293b;
+    --ok-bg:#06351f;
+    --ok-border:#0e6c45;
+    --ok-text:#c8ffe3;
+    --err-bg:#3b0d0d;
+    --err-border:#7f1d1d;
+    --err-text:#ffd5d5;
+    --warn-bg:#3a2903;
+    --warn-border:#885e09;
+    --warn-text:#ffe6b0;
+  }
+
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0;background:var(--bg);color:var(--text);
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
     font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    transition:background .2s ease,color .2s ease;
   }
   .wrap{max-width:1024px;margin:20px auto;padding:0 16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 18px 40px rgba(15,23,42,.15);
+  }
+
+  .header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .header-main{flex:1 1 auto}
+
   h1{margin:0 0 6px;font-size:1.45rem}
   .muted{color:var(--muted)}
 
+  .theme-btn{
+    align-self:flex-start;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text);
+    font-size:.85rem;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+  }
+  .theme-btn:hover{background:var(--surface)}
+
+  @media (max-width:720px){
+    .header{flex-direction:column-reverse;align-items:flex-start}
+  }
+
   .grid-info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 6px}
   @media (max-width:720px){.grid-info{grid-template-columns:1fr}}
-  .info{background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:12px;padding:12px}
-  .info b{display:block;margin-bottom:4px;color:#e2e8f0}
+  .info{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+  }
+  .info b{
+    display:block;
+    margin-bottom:4px;
+    color:var(--muted);
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
 
-  .section{margin:18px 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.18);font-weight:700}
+  .section{
+    margin:18px 0 8px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--surface);
+    font-weight:700;
+  }
 
   /* ===== ITENS ===== */
-  .item{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(0,0,0,.18);margin-bottom:12px}
+  .item{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+    background:var(--surface);
+    margin-bottom:12px;
+  }
   .stem{font-size:1rem;margin-bottom:10px}
-  .scale{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:10px}
-  @media (max-width:820px){ .scale{grid-template-columns:1fr} }
+  .scale{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(220px,1fr));
+    gap:10px;
+  }
+  @media (max-width:820px){
+    .scale{grid-template-columns:1fr}
+  }
 
   /* Botões de escolha (0..5) */
   .opt{
-    display:flex;align-items:center;gap:10px; padding:10px 12px;
-    border:1px solid var(--line); border-radius:12px; background:var(--chip);
-    cursor:pointer; transition:background .15s ease, border-color .15s ease, transform .05s ease;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--chip);
+    cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,transform .05s ease;
   }
-  .opt:hover{background:var(--chipHover); border-color:#4f70ff; transform:translateY(-1px)}
-  .opt input{appearance:none;-webkit-appearance:none; width:0;height:0;position:absolute;opacity:0}
+  .opt:hover{
+    background:var(--chipHover);
+    border-color:var(--pri);
+    transform:translateY(-1px);
+  }
+  .opt input{
+    appearance:none;
+    -webkit-appearance:none;
+    width:0;
+    height:0;
+    position:absolute;
+    opacity:0;
+  }
   .opt span{font-weight:600}
   .opt small{opacity:.8}
-  .opt:has(input:checked){background:var(--chipSel); border-color:#6d28d9; box-shadow:0 0 0 1px #6d28d9 inset}
+  .opt:has(input:checked){
+    background:var(--chipSel);
+    border-color:var(--pri);
+    box-shadow:0 0 0 1px var(--pri) inset;
+  }
 
-  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.25);font-size:.86rem}
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:6px 0 12px;
+  }
+  .pill{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--surface);
+    font-size:.86rem;
+  }
 
-  .btn{display:inline-flex;align-items:center;gap:10px;background:var(--pri);border:none;color:#fff;padding:12px 16px;border-radius:12px;cursor:pointer;font-weight:600}
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    background:var(--pri);
+    border:none;
+    color:#fff;
+    padding:12px 16px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:600;
+  }
   .btn.ok{background:var(--ok)}
-  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
   .btn:disabled{opacity:.6;cursor:not-allowed}
 
-  .msg{margin:12px 0;padding:12px;border-radius:10px}
-  .okbox{background:#06351f;border:1px solid #0e6c45;color:#c8ffe3}
-  .errbox{background:#3b0d0d;border:1px solid #7f1d1d;color:#ffd5d5}
-  .warnbox{background:#3a2903;border:1px solid #885e09;color:#ffe6b0}
+  .msg{margin:12px 0;padding:12px;border-radius:10px;font-size:.9rem}
+  .okbox{
+    background:var(--ok-bg);
+    border:1px solid var(--ok-border);
+    color:var(--ok-text);
+  }
+  .errbox{
+    background:var(--err-bg);
+    border:1px solid var(--err-border);
+    color:var(--err-text);
+  }
+  .warnbox{
+    background:var(--warn-bg);
+    border:1px solid var(--warn-border);
+    color:var(--warn-text);
+  }
 
-  .progress{height:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;overflow:hidden}
-  .bar{height:100%;width:0%;background:linear-gradient(90deg,#6d28d9,#10b981)}
+  .progress{
+    height:10px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .bar{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#6d28d9,#10b981);
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>ETDAH-AD</h1>
-    <p class="muted">
-      Considere os <b>últimos 6 meses</b>. Marque a opção que melhor descreve a frequência:
-    </p>
+    <div class="header">
+      <div class="header-main">
+        <h1>ETDAH-AD</h1>
+        <p class="muted">
+          Considere os <b>últimos 6 meses</b>. Marque a opção que melhor descreve a frequência:
+        </p>
+      </div>
+      <button id="themeToggle" class="theme-btn" type="button">🌙 Modo escuro</button>
+    </div>
+
     <div class="legend">
       <span class="pill">Nunca</span>
       <span class="pill">Muito raramente</span>
@@ -117,6 +310,43 @@ const $ = s => document.querySelector(s);
 const onlyDigits = s => (s||"").replace(/\D+/g,"");
 const qs = k => new URLSearchParams(location.search).get(k) || "";
 const TOKEN = qs("token");
+
+/* ===== TEMA CLARO/ESCURO ===== */
+const THEME_KEY = "integrada_theme";
+
+function applyTheme(theme){
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  const btn = $("#themeToggle");
+  if(btn){
+    btn.textContent = theme === "dark" ? "☀️ Modo claro" : "🌙 Modo escuro";
+  }
+}
+
+function initTheme(){
+  let theme = "light";
+  try{
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved === "dark" || saved === "light") theme = saved;
+  }catch(_){}
+  applyTheme(theme);
+
+  const btn = $("#themeToggle");
+  if(btn){
+    btn.addEventListener("click", ()=>{
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      const next = current === "dark" ? "light" : "dark";
+      applyTheme(next);
+      try{ localStorage.setItem(THEME_KEY, next); }catch(_){}
+    });
+  }
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", initTheme);
+} else {
+  initTheme();
+}
 
 function setBox(id, text, kind="ok"){
   const el=$(id); if(!el) return;
@@ -463,7 +693,6 @@ $("#clearDraft").addEventListener('click', ()=>{
 
 /* ===== CÁLCULOS / SCORING ===== */
 function computeScores(answersMap){
-  // somas brutas
   const sumFrom = (arr, invert=false)=>{
     let s=0;
     for(const idx of arr){
@@ -478,10 +707,9 @@ function computeScores(answersMap){
   const desat  = sumFrom(DESAT,false);
   const impuls = sumFrom(IMPULS,false);
   const emo    = sumFrom(EMO,false);
-  const autor  = sumFrom(AUTORREG_INV,true);  // invertidos
+  const autor  = sumFrom(AUTORREG_INV,true);
   const hiper  = sumFrom(HIPER,false);
 
-  // total geral bruto (1..69)
   let total = 0;
   for(let i=1;i<=TOTAL_ITEMS;i++){
     total += answersMap[`q${String(i).padStart(2,"0")}`] ?? 0;
@@ -525,25 +753,24 @@ $("#form").addEventListener("submit", async (e)=>{
       return;
     }
 
-    // 3. Coleta respostas + qaList bonitinho
-    const answersMap = {}; // { q01: 3, q02: 0, ... }
-    const qaList = [];     // [{n, q, label, value}]
+    // 3. Coleta respostas
+    const answersMap = {};
+    const questionsArr = []; // [{ "pergunta": "rótulo" }]
 
     for(let i=1;i<=TOTAL_ITEMS;i++){
       const qn = String(i).padStart(2,"0");
       const sel = document.querySelector(`input[name="q${qn}"]:checked`);
       const val = Number(sel.value);
 
-      // achar rótulo ("Raramente"...)
       const choiceInfo = CHOICES.find(c => c.v === val) || {l:"",v:val};
+      const label = choiceInfo.l;
+      const questionText = ITEMS[i-1] || "";
 
       answersMap[`q${qn}`] = val;
-      qaList.push({
-        n: i,
-        q: ITEMS[i-1] || "",
-        label: choiceInfo.l,
-        value: val
-      });
+
+      const obj = {};
+      obj[questionText] = label;
+      questionsArr.push(obj);
     }
 
     // 4. Subescalas e total
@@ -558,7 +785,6 @@ $("#form").addEventListener("submit", async (e)=>{
       `Hiperatividade=${hiper}`
     ].join(',');
 
-    // duração
     const durationSec = Math.round((Date.now()-startAt)/1000);
 
     // 5. Salva no Sheets
@@ -572,11 +798,10 @@ $("#form").addEventListener("submit", async (e)=>{
       total: total,
       categoria: categoria_csv,
       metrics: "",
-      questions: JSON.stringify(qaList)
-      
+      questions: JSON.stringify(questionsArr)
     });
 
-    // 6. Marca como feito no Patients
+    // 6. Marca como feito
     const doneUpdates = {};
     RELEASE_KEYS.map(k=>`${k}_FEITO`).forEach(k=>{
       if(k in patient) doneUpdates[k] = "sim";
@@ -586,7 +811,6 @@ $("#form").addEventListener("submit", async (e)=>{
     }
     await sheetPatchBy(SHEETS.PATIENTS, "cpf", patient.cpf, doneUpdates);
 
-    // 7. limpa e volta
     clearDraft();
     setBox("#msg","Formulário enviado. Voltando ao portal…","ok");
     setTimeout(goPortalWithToken, 1100);
